@@ -12,13 +12,14 @@ import {
   FileText,
   AlertCircle
 } from 'lucide-react';
-import { ServiceProvider, ServiceItem, Booking, PaymentMethodType } from '../types.ts';
+import { ServiceProvider, ServiceItem, Booking, PaymentMethodType, UserAccount } from '../types.ts';
 
 interface PaymentGatewayModalProps {
   provider: ServiceProvider;
   service: ServiceItem;
   dateString: string;
   timeSlot: string;
+  currentUser?: UserAccount | null;
   onClose: () => void;
   onPaymentSuccess: (booking: Booking) => void;
 }
@@ -28,14 +29,15 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   service,
   dateString,
   timeSlot,
+  currentUser,
   onClose,
   onPaymentSuccess,
 }) => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('credit_card');
-  const [clientName, setClientName] = useState('Sarah Jenkins');
-  const [clientEmail, setClientEmail] = useState('sarah.jenkins@example.com');
-  const [clientPhone, setClientPhone] = useState('(555) 789-2041');
-  const [serviceAddress, setServiceAddress] = useState('458 Maple Ave, Metro Valley');
+  const [clientName, setClientName] = useState(currentUser?.name || 'Sarah Jenkins');
+  const [clientEmail, setClientEmail] = useState(currentUser?.email || 'sarah.jenkins@example.com');
+  const [clientPhone, setClientPhone] = useState(currentUser?.phone || '(555) 789-2041');
+  const [serviceAddress, setServiceAddress] = useState(currentUser?.address || '458 Maple Ave, Metro Valley');
   const [specialNotes, setSpecialNotes] = useState('');
 
   // Card fields

@@ -16,6 +16,7 @@ import { UserBookingsModal } from './components/UserBookingsModal.tsx';
 import { PostCivicProjectModal } from './components/PostCivicProjectModal.tsx';
 import { HowItWorksView } from './components/HowItWorksView.tsx';
 import { SavedProvidersView } from './components/SavedProvidersView.tsx';
+import { AuthModal } from './components/AuthModal.tsx';
 import { Footer } from './components/Footer.tsx';
 
 import { 
@@ -26,7 +27,9 @@ import {
   CivicProject, 
   BidSubmission, 
   Review,
-  VerificationRequest 
+  VerificationRequest,
+  UserAccount,
+  UserRole
 } from './types.ts';
 
 import { 
@@ -35,6 +38,8 @@ import {
   INITIAL_BOOKINGS, 
   SERVICE_CATEGORIES 
 } from './data/mockData.ts';
+
+import { INITIAL_USERS } from './data/mockUsers.ts';
 
 import { 
   Filter, 
@@ -88,6 +93,32 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('civicguild_bookings', JSON.stringify(bookings));
   }, [bookings]);
+
+  // User Accounts & Authentication State
+  const [allUsers, setAllUsers] = useState<UserAccount[]>(() => {
+    const saved = localStorage.getItem('civicguild_users');
+    return saved ? JSON.parse(saved) : INITIAL_USERS;
+  });
+
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
+    const saved = localStorage.getItem('civicguild_current_user');
+    return saved ? JSON.parse(saved) : INITIAL_USERS[0]; // Elena Rostova (Master Electrician)
+  });
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
+
+  useEffect(() => {
+    localStorage.setItem('civicguild_users', JSON.stringify(allUsers));
+  }, [allUsers]);
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('civicguild_current_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('civicguild_current_user');
+    }
+  }, [currentUser]);
 
   // Navigation & Filter state
   const [currentTab, setCurrentTab] = useState<'browse' | 'saved' | 'civic' | 'how_it_works' | 'my_bookings'>('browse');
@@ -394,6 +425,56 @@ export default function App() {
     setTimeout(() => setBookingToast(null), 4000);
   };
 
+  // Auth Handlers
+  const handleLogin = (user: UserAccount) => {
+    setCurrentUser(user);
+    if (user.role === 'provider' && user.providerId) {
+      setSelectedProviderIdForConsole(user.providerId);
+    }
+    const roleLabel = user.role === 'provider' ? 'Trader Pro' : user.role === 'civic_official' ? 'Civic Official' : 'Client';
+    setBookingToast(`Welcome back, ${user.name}! (${roleLabel})`);
+    setTimeout(() => setBookingToast(null), 4000);
+  };
+
+  const handleSignup = (newUser: UserAccount, newProvider?: ServiceProvider) => {
+    setAllUsers((prev) => [newUser, ...prev]);
+    setCurrentUser(newUser);
+
+    if (newProvider) {
+      setProviders((prev) => [newProvider, ...prev]);
+      setSelectedProviderIdForConsole(newProvider.id);
+      setIsProviderMode(true);
+    }
+
+    const roleLabel = newUser.role === 'provider' ? 'Trader Pro' : newUser.role === 'civic_official' ? 'Civic Official' : 'Client';
+    setBookingToast(`Account created! Signed in as ${newUser.name} (${roleLabel})`);
+    setTimeout(() => setBookingToast(null), 4000);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setIsProviderMode(false);
+    setBookingToast('You have been signed out of CivicGuild.');
+    setTimeout(() => setBookingToast(null), 3500);
+  };
+
+  const handleSwitchUser = (user: UserAccount) => {
+    setCurrentUser(user);
+    if (user.role === 'provider' && user.providerId) {
+      setSelectedProviderIdForConsole(user.providerId);
+    }
+    const roleLabel = user.role === 'provider' ? 'Trader Pro' : user.role === 'civic_official' ? 'Civic Official' : 'Client';
+    setBookingToast(`Active Account: ${user.name} (${roleLabel})`);
+    setTimeout(() => setBookingToast(null), 3500);
+  };
+
+  const handleOpenProviderDashboard = (providerId?: string) => {
+    if (providerId) {
+      setSelectedProviderIdForConsole(providerId);
+    }
+    setIsProviderMode(true);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
       {/* Top Navbar */}
@@ -403,17 +484,26 @@ export default function App() {
         isProviderMode={isProviderMode}
         setIsProviderMode={setIsProviderMode}
         openNewProjectModal={() => {
-          if (isProviderMode) {
-            // Open provider console directly
-            setCurrentTab('browse');
-          } else {
+          if (currentUser?.role === 'civic_official' || !isProviderMode) {
             setIsPostProjectModalOpen(true);
+          } else {
+            // Open provider console directly
+            setIsProviderMode(true);
           }
         }}
         bookingCount={bookings.length}
         savedCount={savedProviderIds.length}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
+        currentUser={currentUser}
+        onOpenAuthModal={(mode) => {
+          setAuthModalMode(mode);
+          setIsAuthModalOpen(true);
+        }}
+        onLogout={handleLogout}
+        onSwitchUser={handleSwitchUser}
+        allUsers={allUsers}
+        openProviderDashboard={handleOpenProviderDashboard}
       />
 
       {/* Global Toast Alert */}
@@ -439,6 +529,11 @@ export default function App() {
               availabilityFilter={availabilityFilter}
               setAvailabilityFilter={setAvailabilityFilter}
               onExploreCivic={() => setCurrentTab('civic')}
+              currentUser={currentUser}
+              onOpenAuthModal={(mode) => {
+                setAuthModalMode(mode);
+                setIsAuthModalOpen(true);
+              }}
             />
 
             {/* Category Segmented Strip */}
@@ -591,8 +686,13 @@ export default function App() {
           <CivicProjectsSection
             projects={civicProjects}
             providers={providers}
+            currentUser={currentUser}
             onOpenNewProject={() => setIsPostProjectModalOpen(true)}
             onSubmitBid={handleSubmitBid}
+            onOpenAuthModal={(mode) => {
+              setAuthModalMode(mode);
+              setIsAuthModalOpen(true);
+            }}
           />
         )}
 
@@ -650,6 +750,7 @@ export default function App() {
           service={checkoutSession.service}
           dateString={checkoutSession.dateString}
           timeSlot={checkoutSession.timeSlot}
+          currentUser={currentUser}
           onClose={() => setCheckoutSession(null)}
           onPaymentSuccess={handlePaymentSuccess}
         />
@@ -662,6 +763,16 @@ export default function App() {
           onProjectCreated={handleCreateCivicProject}
         />
       )}
+
+      {/* Universal Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        initialMode={authModalMode}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLogin={handleLogin}
+        onSignup={handleSignup}
+        allUsers={allUsers}
+      />
 
       {/* Footer */}
       <Footer

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Search, MapPin, Calendar, ShieldCheck, CheckCircle2, Award } from 'lucide-react';
-import { ServiceCategoryId } from '../types.ts';
+import { Search, MapPin, Calendar, ShieldCheck, CheckCircle2, Award, ArrowRight } from 'lucide-react';
+import { ServiceCategoryId, UserAccount } from '../types.ts';
 
 interface HeroSectionProps {
   searchQuery: string;
@@ -12,6 +12,8 @@ interface HeroSectionProps {
   availabilityFilter: string;
   setAvailabilityFilter: (f: string) => void;
   onExploreCivic: () => void;
+  currentUser?: UserAccount | null;
+  onOpenAuthModal?: (mode: 'signin' | 'signup') => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -24,6 +26,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   availabilityFilter,
   setAvailabilityFilter,
   onExploreCivic,
+  currentUser,
+  onOpenAuthModal,
 }) => {
   return (
     <section className="relative overflow-hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-10 lg:py-16">
@@ -97,8 +101,51 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </div>
             </div>
 
+            {/* Account Status / Persona Shortcut Bar */}
+            {currentUser ? (
+              <div className="mt-4 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>
+                    Logged in as <strong className="text-slate-900 dark:text-white">{currentUser.name}</strong>
+                    <span className="text-slate-400 dark:text-slate-500 ml-1">
+                      ({currentUser.role === 'provider' ? `Trader • ${currentUser.businessName || 'Pro'}` : currentUser.role === 'civic_official' ? 'Civic Official' : 'Client'})
+                    </span>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onOpenAuthModal?.('signin')}
+                  className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium ml-2 text-[11px]"
+                >
+                  Switch User
+                </button>
+              </div>
+            ) : (
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                <span className="text-slate-500">Join CivicGuild:</span>
+                <button
+                  type="button"
+                  onClick={() => onOpenAuthModal?.('signup')}
+                  className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                >
+                  <span>Become a Verified Trader</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+                <span>·</span>
+                <button
+                  type="button"
+                  onClick={() => onOpenAuthModal?.('signup')}
+                  className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                >
+                  <span>Client Sign Up</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
             {/* Adjacent Trust & Quantitative Proof */}
-            <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 grid grid-cols-3 gap-4 text-left">
+            <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 grid grid-cols-3 gap-4 text-left">
               <div>
                 <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
                   100%

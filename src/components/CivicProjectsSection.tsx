@@ -12,32 +12,43 @@ import {
   PlusCircle,
   Users
 } from 'lucide-react';
-import { CivicProject, BidSubmission, ServiceProvider } from '../types.ts';
+import { CivicProject, BidSubmission, ServiceProvider, UserAccount } from '../types.ts';
 
 interface CivicProjectsSectionProps {
   projects: CivicProject[];
   providers: ServiceProvider[];
+  currentUser?: UserAccount | null;
   onOpenNewProject: () => void;
   onSubmitBid: (projectId: string, bid: BidSubmission) => void;
+  onOpenAuthModal?: (mode: 'signin' | 'signup') => void;
 }
 
 export const CivicProjectsSection: React.FC<CivicProjectsSectionProps> = ({
   projects,
   providers,
+  currentUser,
   onOpenNewProject,
   onSubmitBid,
+  onOpenAuthModal,
 }) => {
   const [activeProject, setActiveProject] = useState<CivicProject | null>(null);
   const [biddingProjectId, setBiddingProjectId] = useState<string | null>(null);
 
   // Bid form state
-  const [selectedProviderId, setSelectedProviderId] = useState<string>(providers[0]?.id || '');
+  const [selectedProviderId, setSelectedProviderId] = useState<string>(
+    currentUser?.providerId || providers[0]?.id || ''
+  );
   const [proposedBudget, setProposedBudget] = useState<number>(18000);
   const [timelineDays, setTimelineDays] = useState<number>(14);
   const [coverLetter, setCoverLetter] = useState<string>('');
   const [bidSubmittedToast, setBidSubmittedToast] = useState<boolean>(false);
 
   const handleOpenBidModal = (project: CivicProject) => {
+    if (currentUser?.role === 'provider' && currentUser.providerId) {
+      setSelectedProviderId(currentUser.providerId);
+    } else if (providers.length > 0) {
+      setSelectedProviderId(providers[0].id);
+    }
     setBiddingProjectId(project.id);
     setProposedBudget(Math.round(project.targetBudget * 0.95));
     setCoverLetter(`We are fully certified for ${project.title}. Our local team has completed similar municipal scopes with full compliance.`);

@@ -167,3 +167,28 @@ export interface CivicProject {
   bids: BidSubmission[];
   featuredCitizenBenefit: string;
 }
+
+export type UserRole = 'client' | 'provider' | 'civic_official';
+
+export interface UserAccount {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar: string;
+  phone?: string;
+  // Client fields
+  address?: string;
+  neighborhood?: string;
+  // Trader / Provider fields
+  providerId?: string;
+  businessName?: string;
+  tradeCategory?: ServiceCategoryId;
+  licenseNumber?: string;
+  startingPrice?: number;
+  yearsExperience?: number;
+  // Civic / Municipal fields
+  agencyDepartment?: string;
+  badgeId?: string;
+  createdAt: string;
+}
