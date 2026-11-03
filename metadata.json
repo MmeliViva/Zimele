@@ -1,0 +1,6 @@
+{
+  "name": "CivicGuild - Local Services & Civic Projects Marketplace",
+  "description": "Connecting licensed service providers, residents, and municipal projects with real-time availability, verified reviews, and secure escrow payments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
